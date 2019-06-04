@@ -4,8 +4,8 @@ from django.db import models
 
 
 class TimeStampedModel(models.Model):
-    created_on = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+    created_on = models.DateTimeField(auto_now_add=True, null=True)
+    updated_at = models.DateTimeField(auto_now=True, null=True)
 
     class Meta:
         abstract = True
@@ -19,11 +19,22 @@ class CarDetails(TimeStampedModel):
     def __str__(self):
         return self.registration_number + " " + self.color
 
+    class Meta:
+        ordering = ('id',)
+
 
 class SlotDetails(TimeStampedModel):
-    carId = models.ForeignKey(CarDetails, on_delete=models.CASCADE, default=0)
+    colorOptions = (('BLACK', 'Black'), ('WHITE', 'White'), ('BLUE', 'Blue'), ('RED', 'Red'))
+    registration_number = models.CharField(max_length=13,  default='NULL')
+    color = models.CharField(max_length=5, choices=colorOptions, default='NULL')
+    is_occupied = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.carId
+        return self.registration_number + " " + self.color
+
+    class Meta:
+        ordering = ('id',)
+
+
 
 
