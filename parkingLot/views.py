@@ -1,8 +1,10 @@
 from django.http import HttpResponse, Http404
-from .models import SlotDetails
+from .models import SlotDetails, Revenue
 import random
 import rstr
 import re
+from .utils import revenue_utils
+
 # Create your views here.
 
 
@@ -32,7 +34,8 @@ def add_car(request):
     find_empty_slot = SlotDetails.objects.filter(is_occupied=False).order_by('id')[0].id
     update_lot = SlotDetails(id=find_empty_slot, registration_number=request.POST['registration_number'], color=request.POST['color'], is_occupied=True)
     update_lot.save()
-    return HttpResponse("Your car with registration number is parked in slot.")
+    return HttpResponse("Your car with registration number " + request.POST['registration_number'] +
+                        " is parked in slot " + str(find_empty_slot))
 
 
 def fetch_all_parked_cars(request):
@@ -61,19 +64,39 @@ def search(request, key):
 def remove_car(request):
     if 'registration_number' in request.POST:
         car_reg_number = request.POST['registration_number']
-        find_slot = SlotDetails.objects.filter(registration_number=car_reg_number)[0].id
+        find_slot = SlotDetails.objects.filter(registration_number=car_reg_number)[0]
         if find_slot:
-            update_lot = SlotDetails(id=find_slot, registration_number=None,
+            update_lot = SlotDetails(id=find_slot.id, registration_number=None,
                                      color=None, is_occupied=False)
             update_lot.save()
-            return HttpResponse("Car with registration number " + request.POST['registration_number'] + " has been removed")
+            parking_fee = calculate_revenue(find_slot)
+            return HttpResponse("Car with registration number " + request.POST['registration_number']
+                                + " has been removed. Total fee to be paid is Rs." + str(parking_fee))
     if 'slot_number' in request.POST:
         car_slot = request.POST['slot_number']
+        car_details = SlotDetails.objects.filter(id=int(car_slot))[0]
         update_lot = SlotDetails(id=int(car_slot), registration_number=None,
                                  color=None, is_occupied=False)
         update_lot.save()
-        return HttpResponse("Car in slot " + request.POST['slot_number'] + " has been removed")
+        parking_fee = calculate_revenue(car_details)
+        return HttpResponse("Car in slot " + request.POST['slot_number'] +
+                            " has been removed. Total fee to be paid is Rs." + str(parking_fee))
 
     return Http404("Information is incorrect.")
+
+
+# calculates parking fee for the car and save it in DB
+def calculate_revenue(car_info):
+    parking_fee = revenue_utils.parking_fee(car_info.updated_at)
+    add_revenue = Revenue(car_number=car_info.registration_number, parking_fee=parking_fee)
+    add_revenue.save()
+    return int(parking_fee)
+
+
+# calculates total revenue(currently weekly)
+def total_revenue(request):
+    revenue = revenue_utils.calculate_total_revenue()
+    return HttpResponse("Total revenue for last week is " + str(revenue))
+
 
 

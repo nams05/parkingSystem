@@ -11,4 +11,5 @@ urlpatterns = [
     path('removeCar/', csrf_exempt(remove_car), name='remove_car'),
     path('search/<str:key>', search, name='search'),
     path('allParkedCars/', fetch_all_parked_cars, name='fetch_all_parked_cars'),
+    path('revenue/', total_revenue, name='total_revenue'),
 ]
