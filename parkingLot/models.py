@@ -24,5 +24,10 @@ class SlotDetails(TimeStampedModel):
         ordering = ('id',)
 
 
+class Revenue(TimeStampedModel):
+    parking_fee = models.IntegerField()
+    car_number = models.CharField(max_length=13, null=True)
 
+    class Meta:
+        ordering = ('created_on',)
 
