@@ -1,7 +1,4 @@
-
 from django.http import HttpResponse, Http404
-from rest_framework import generics
-from .serializers import *
 from .models import SlotDetails
 import random
 import rstr
@@ -9,10 +6,13 @@ import re
 # Create your views here.
 
 
+def welcome_page(request):
+    return HttpResponse("WELCOME TO THE PARKING LOT")
+
+
 def create_lot(request, total_lots):
     lot_instance = SlotDetails.objects.all().count()
-    if(lot_instance):
-
+    if lot_instance:
         return HttpResponse("Parking Lot already exists with " + str(lot_instance) + " slots.")
     for i in range(total_lots):
         new_slot = SlotDetails()
@@ -59,17 +59,20 @@ def search(request, key):
 
 
 def remove_car(request):
-    if request.POST['registration_number']:
-        find_slot = SlotDetails.objects.filter(registration_number=request.POST['registration_number'])[0].id
-        update_lot = SlotDetails(id=find_slot, registration_number=None,
+    if 'registration_number' in request.POST:
+        car_reg_number = request.POST['registration_number']
+        find_slot = SlotDetails.objects.filter(registration_number=car_reg_number)[0].id
+        if find_slot:
+            update_lot = SlotDetails(id=find_slot, registration_number=None,
+                                     color=None, is_occupied=False)
+            update_lot.save()
+            return HttpResponse("Car with registration number " + request.POST['registration_number'] + " has been removed")
+    if 'slot_number' in request.POST:
+        car_slot = request.POST['slot_number']
+        update_lot = SlotDetails(id=int(car_slot), registration_number=None,
                                  color=None, is_occupied=False)
         update_lot.save()
-        return HttpResponse("car has been removed")
-    elif request.POST['slot_number']:
-        update_lot = SlotDetails(id=request.POST['slot_number'], registration_number=None,
-                                 color=None, is_occupied=False)
-        update_lot.save()
-        return HttpResponse("car has been removed")
+        return HttpResponse("Car in slot " + request.POST['slot_number'] + " has been removed")
 
     return Http404("Information is incorrect.")
 
