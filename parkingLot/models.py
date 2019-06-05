@@ -11,26 +11,26 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 
-class CarDetails(TimeStampedModel):
-    colorOptions = (('BLACK', 'Black'), ('WHITE', 'White'), ('BLUE', 'Blue'), ('RED', 'Red'))
-    registration_number = models.CharField(max_length=13)
-    color = models.CharField(max_length=5, choices=colorOptions)
-
-    def __str__(self):
-        return self.registration_number + " " + self.color
-
-    class Meta:
-        ordering = ('id',)
+# class CarDetails(TimeStampedModel):
+#     colorOptions = (('BLACK', 'Black'), ('WHITE', 'White'), ('BLUE', 'Blue'), ('RED', 'Red'))
+#     registration_number = models.CharField(max_length=13)
+#     color = models.CharField(max_length=5, choices=colorOptions)
+#
+#     def __str__(self):
+#         return self.registration_number + " " + self.color
+#
+#     class Meta:
+#         ordering = ('id',)
 
 
 class SlotDetails(TimeStampedModel):
     colorOptions = (('BLACK', 'Black'), ('WHITE', 'White'), ('BLUE', 'Blue'), ('RED', 'Red'))
-    registration_number = models.CharField(max_length=13,  default='NULL')
-    color = models.CharField(max_length=5, choices=colorOptions, default='NULL')
+    registration_number = models.CharField(max_length=13,  default=None)
+    color = models.CharField(max_length=5, choices=colorOptions, default=None)
     is_occupied = models.BooleanField(default=False)
 
     def __str__(self):
-        return self.registration_number + " " + self.color
+        return str(id) + self.registration_number + " " + self.color
 
     class Meta:
         ordering = ('id',)

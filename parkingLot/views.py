@@ -1,10 +1,11 @@
 
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from rest_framework import generics
 from .serializers import *
 from .models import SlotDetails
 import random
 import rstr
+import re
 # Create your views here.
 
 
@@ -21,54 +22,55 @@ def create_lot(request, total_lots):
     for i in filled_slots:
         car_registration_number = rstr.xeger(r'^[A-Z]{2}-[0-9]{2}-[A-Z]{2}-[0-9]{4}')
         car_color = random.choice(['BLUE', 'BLACK', 'WHITE', 'RED'])
-        instance = SlotDetails(id=i, registration_number=car_registration_number, color=car_color)
+        instance = SlotDetails(id=i, registration_number=car_registration_number, color=car_color, is_occupied=True)
         instance.save()
 
     return HttpResponse(str(total_lots) + " have been created. " + str(initial_filled_slots) + " have been filled.")
 
 
 def add_car(request):
-    find_empty_slot = SlotDetails.objects.filter(is_occupied='FALSE').order_by('id')[0:1]
-    # update_lot = SlotDetails(id=find_empty_slot)
+    find_empty_slot = SlotDetails.objects.filter(is_occupied=False).order_by('id')[0].id
+    update_lot = SlotDetails(id=find_empty_slot, registration_number=request.POST['registration_number'], color=request.POST['color'], is_occupied=True)
+    update_lot.save()
     return HttpResponse("Your car with registration number is parked in slot.")
 
 
 def fetch_all_parked_cars(request):
-    return HttpResponse("All the cars")
+    find_cars = SlotDetails.objects.filter(is_occupied=True)
+    response = ''
+    for i in find_cars:
+        response += "Car with registration number " + i.registration_number + " is parked in slot " + str(
+            i.id) + ".<br>"
+    return HttpResponse(response)
 
 
 def search(request, key):
-    return HttpResponse("search result")
+    x = re.search("^[A-Z]{2}-[0-9]{2}-[A-Z]{2}-[0-9]{4}$", key)
+    if x:
+        find_slot = SlotDetails.objects.filter(registration_number=key)[0].id
+        return HttpResponse("Car with registration number " + key + " is parked in slot " + str(find_slot))
+    elif key in ['BLACK', 'WHITE', 'BLUE', 'RED']:
+        find_cars = SlotDetails.objects.filter(color=key)
+        response = ''
+        for i in find_cars:
+            response += "Car with registration number "+i.registration_number+" is parked in slot " + str(i.id)+".<br>"
+        return HttpResponse(response)
+    return Http404(key+" is not found.Try again.")
 
 
 def remove_car(request):
-    return HttpResponse("car has been removed")
+    if request.POST['registration_number']:
+        find_slot = SlotDetails.objects.filter(registration_number=request.POST['registration_number'])[0].id
+        update_lot = SlotDetails(id=find_slot, registration_number=None,
+                                 color=None, is_occupied=False)
+        update_lot.save()
+        return HttpResponse("car has been removed")
+    elif request.POST['slot_number']:
+        update_lot = SlotDetails(id=request.POST['slot_number'], registration_number=None,
+                                 color=None, is_occupied=False)
+        update_lot.save()
+        return HttpResponse("car has been removed")
 
-# class CreateLotView(generics.ListCreateAPIView):
-#     queryset = SlotDetails.objects.all()
-#     serializer_class = SlotDetailsSerializer
-#
-#     def create_lot(self, serializer):
-#         """Save the post data when creating a new lot."""
-#
-#         serializer.save()
-#
-#
-# class CreateView(generics.ListCreateAPIView):
-#     """This class defines the create behavior of our rest api."""
-#     queryset = CarDetails.objects.all()
-#     serializer_class = CarDetailsSerializer
-#
-#     def park_car(self, serializer):
-#         """Save the post data when creating a new bucketlist."""
-#         serializer.save()
-#
-#
-# class DetailsView(generics.RetrieveUpdateDestroyAPIView):
-#     """This class handles the http GET, PUT and DELETE requests."""
-#
-#     queryset = CarDetails.objects.all()
-#     serializer_class = CarDetailsSerializer
-#
-#
-#
+    return Http404("Information is incorrect.")
+
+
